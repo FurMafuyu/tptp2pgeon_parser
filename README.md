@@ -1,6 +1,6 @@
 # TPTP to PGeon parser
 
-Parses problem files from TPTP and QMLTP to PGeon problem files.
+Currently translates problem files from TPTP and QMLTP to PGeon problem files.
 
 ### Requierements :
 - Dune
