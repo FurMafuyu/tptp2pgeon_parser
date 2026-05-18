@@ -42,5 +42,6 @@ rule token = parse
 
 | lower_alpha alpha_num* as s { PRED s }
 | '%' [^ '\n']*   { token lexbuf } 
+| '\n'            { Lexing.new_line lexbuf; token lexbuf }
 | eof             { EOF }
 | _ as c          { raise (Lexing_error ("Caractère inconnu : " ^ String.make 1 c)) }
