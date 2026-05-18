@@ -2,7 +2,7 @@
   open Ast
 %}
 
-%token FOF QMF
+%token FOF QMF CNF
 %token LPAREN RPAREN LBRACKET RBRACKET
 %token COMMA DOT COLON
 %token NOT AND OR IMPLIES EQUIV
@@ -45,6 +45,7 @@ formula:
 declaration:
 | QMF; LPAREN; name = PRED; COMMA; role = PRED; COMMA; f = formula; RPAREN; DOT { f }
 | FOF; LPAREN; name = PRED; COMMA; role = PRED; COMMA; f = formula; RPAREN; DOT { f }
+| CNF; LPAREN; name = PRED; COMMA; role = PRED; COMMA; f = formula; RPAREN; DOT { f }
 
 problem:
 | ds = list(declaration); EOF 

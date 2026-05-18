@@ -14,6 +14,7 @@ rule token = parse
 
 | "fof"           { FOF }
 | "qmf"           { QMF }
+| "cnf"           { CNF }
 
 | '('             { LPAREN }
 | ')'             { RPAREN }
