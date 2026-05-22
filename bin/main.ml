@@ -17,6 +17,16 @@ let () =
     let filename = Sys.argv.(1) in
     let status = Status.extract_status filename in
     
+    let status_str = 
+      match status with
+      | Status.Unsatisfiable -> "Unsatisfiable"
+      | Status.Theorem       -> "Theorem"
+      | Status.NonTheorem    -> "NonTheorem"
+      | Status.Satisfiable   -> "Satisfiable"
+      | Status.Unsolved      -> "Unsolved"
+      | Status.UnknownStatus -> "UnknownStatus"
+    in
+    
     let should_negate = 
       match status with
       | Status.Unsatisfiable -> 
@@ -58,7 +68,7 @@ let () =
           ast
       in
 
-      Writer.print_problem final_ast;
+      Writer.print_problem final_ast status_str;
       close_in ic
     with
     | Parser.Error -> close_in ic; print_error_position lexbuf; exit 1

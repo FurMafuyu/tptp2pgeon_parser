@@ -69,8 +69,9 @@ let close_formula expr =
     EBind ("forall", var, acc_expr)
   ) free_vars expr
 
-  let print_problem (prob : problem_decl) =
+  let print_problem (prob : problem_decl) (expected_status : string) =
     print_string (generate_header prob);
+    Printf.printf "/* expected: %s */\n" expected_status;
     List.iter (fun f -> 
       let closed_f = close_formula f in 
       let s = expr_to_pgeon closed_f in
