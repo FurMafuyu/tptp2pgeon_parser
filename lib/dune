@@ -1,6 +1,7 @@
 (library
  (name tptp_parser)
- (modules ast lexer parser writer))
+ (modules ast lexer parser writer status)
+ (libraries str))
 
 (menhir
  (modules parser))
