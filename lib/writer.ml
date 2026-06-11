@@ -19,14 +19,13 @@ let rec expr_to_pgeon = function
     Printf.sprintf "equ(%s, %s)" (expr_to_pgeon a) (expr_to_pgeon b)
   | EVar v -> v
   | EBind (binder, var, body) ->
-      Printf.sprintf "%s %s. %s" binder var (expr_to_pgeon body) (* faire tests *)
+      Printf.sprintf "%s %s. %s" binder var (expr_to_pgeon body)
   | EModal (kind, body) ->
       Printf.sprintf "%s(%s)" kind (expr_to_pgeon body)
   | EApp (name, []) -> name ^ "()"
   | EApp (name, args) ->
       let translated_args = List.map expr_to_pgeon args in
       Printf.sprintf "%s(%s)" name (String.concat ", " translated_args)
-  
 ;;
 
 let rec collect_signatures acc = function
@@ -40,41 +39,43 @@ let rec collect_signatures acc = function
   | EBind (_, _, body) -> collect_signatures acc body
   | EModal (_, body) -> collect_signatures acc body
   | EVar _ -> acc
+;;
 
 let generate_header (prob : problem_decl) =
-  let all_sigs = List.fold_left collect_signatures Signature.empty prob.formulas in
+  let pure_formulas = List.map snd prob.formulas in
+  let all_sigs = List.fold_left collect_signatures Signature.empty pure_formulas in
   if Signature.is_empty all_sigs then ""
   else
     let names = Signature.elements all_sigs 
                 |> List.map fst 
                 |> String.concat " " in
     Printf.sprintf "function %s: -> formula\n\n" names
+;;
 
 let rec get_free_vars bound acc = function
   | EVar v -> 
       if StringSet.mem v bound then acc else StringSet.add v acc
   | EApp (_, args) -> 
       List.fold_left (get_free_vars bound) acc args
-  (* Les variables libres (ici dans une modalité, cf formule de Barcan) 
-   * sont implicitement toujours quantifiée universellement à la racine
-   * de la formule. Pas de soucis avec la nature des domaines.       *)
   | EModal (_, body) -> 
       get_free_vars bound acc body
   | EBind (binder, var, body) -> 
       get_free_vars (StringSet.add var bound) acc body
+;;
 
 let close_formula expr =
   let free_vars = get_free_vars StringSet.empty StringSet.empty expr in
-    StringSet.fold (fun var acc_expr ->
+  StringSet.fold (fun var acc_expr ->
     EBind ("forall", var, acc_expr)
   ) free_vars expr
+;;
 
-  let print_problem (prob : problem_decl) (expected_status : string) =
-    print_string (generate_header prob);
-    Printf.printf "/* expected: %s */\n" expected_status;
-    List.iter (fun f -> 
-      let closed_f = close_formula f in 
-      let s = expr_to_pgeon closed_f in
-      Printf.printf "%s ;\n" s
-    ) prob.formulas
-  ;;
+let print_problem (prob : problem_decl) (expected_status : string) =
+  print_string (generate_header prob);
+  Printf.printf "/* expected: %s */\n" expected_status;
+  List.iter (fun (_, f) -> 
+    let closed_f = close_formula f in 
+    let s = expr_to_pgeon closed_f in
+    Printf.printf "%s ;\n" s
+  ) prob.formulas
+;;

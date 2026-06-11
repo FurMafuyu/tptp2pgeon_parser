@@ -43,10 +43,13 @@ formula:
 | f1 = formula; EQUIV; f2 = formula                                 { EApp ("equ", [f1; f2]) }
 
 declaration:
-| QMF; LPAREN; name = PRED; COMMA; role = PRED; COMMA; f = formula; RPAREN; DOT { f }
-| FOF; LPAREN; name = PRED; COMMA; role = PRED; COMMA; f = formula; RPAREN; DOT { f }
-| CNF; LPAREN; name = PRED; COMMA; role = PRED; COMMA; f = formula; RPAREN; DOT { f }
-
+| QMF; LPAREN; name = PRED; COMMA; role = PRED; COMMA; f = formula; RPAREN; DOT 
+    { let r = if role = "conjecture" then Ast.Conjecture else Ast.Axiom in (r, f) }
+| FOF; LPAREN; name = PRED; COMMA; role = PRED; COMMA; f = formula; RPAREN; DOT 
+    { let r = if role = "conjecture" then Ast.Conjecture else Ast.Axiom in (r, f) }
+| CNF; LPAREN; name = PRED; COMMA; role = PRED; COMMA; f = formula; RPAREN; DOT 
+    { let r = if role = "conjecture" then Ast.Conjecture else Ast.Axiom in (r, f) }
+    
 problem:
 | ds = list(declaration); EOF 
     { { formulas = ds } }

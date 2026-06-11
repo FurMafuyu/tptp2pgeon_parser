@@ -1,10 +1,10 @@
-# TPTP to PGeon parser
+# TPTPTPTP : TPTP Translation Parser for Tableaux and PGeon
 
-Currently translates problem files from TPTP and QMLTP to PGeon and Tableaux Workbench problem files.
+Translates problem files from TPTP and QMLTP to PGeon and Tableau Workbench problem files.
 
 ### Supported
-- PGeon
-- Tableaux Workbench
+- PGeon (--pgeon)
+- Tableaux Workbench (--twb)
 
 ### Requierements
 - Dune
@@ -12,9 +12,4 @@ Currently translates problem files from TPTP and QMLTP to PGeon and Tableaux Wor
 - OCamllex
 
 ### Usage
-
 dune exec parser -- --<options> <problem_file_path> [> <output_file>]
-
-### Options
-- --pgeon
-- --twb

@@ -15,16 +15,29 @@ let print_error_position lexbuf =
     (pos.pos_cnum - pos.pos_bol + 1)
     pos.pos_cnum
 
-let negate_ast ast =
-  let closed_formulas = List.map Writer.close_formula ast.formulas in
-  match closed_formulas with
-  | [] -> ast
-  | [seule_formule] -> { formulas = [EApp ("not", [seule_formule])] }
-  | premiere :: reste ->
-      let grosse_conjonction = 
-        List.fold_left (fun acc_expr f -> EApp ("and", [acc_expr; f])) premiere reste
+    let negate_ast ast =
+      let has_conjecture = List.exists (fun (role, _) -> role = Ast.Conjecture) ast.formulas in
+      
+      let updated_formulas = 
+        if has_conjecture then
+          List.map (fun (role, f) ->
+            match role with
+            | Ast.Axiom -> (Ast.Axiom, f)
+            | Ast.Conjecture -> (Ast.Conjecture, EApp ("not", [f]))
+          ) ast.formulas
+        else
+          match ast.formulas with
+          | [] -> []
+          | [(_, seule_f)] -> [(Ast.Conjecture, EApp ("not", [seule_f]))]
+          | premiere_pair :: reste_pairs ->
+              let premiere = snd premiere_pair in
+              let reste = List.map snd reste_pairs in
+              let grosse_conjonction = 
+                List.fold_left (fun acc_expr f -> EApp ("and", [acc_expr; f])) premiere reste
+              in
+              [(Ast.Conjecture, EApp ("not", [grosse_conjonction]))]
       in
-      { formulas = [EApp ("not", [grosse_conjonction])] }
+      { formulas = updated_formulas }
 
 let write_to_file target_mode output_filename ast status_str =
   if debug then Printf.eprintf "[DEBUG] Creating file: %s\n" output_filename;
