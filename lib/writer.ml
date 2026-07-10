@@ -1,10 +1,11 @@
 open Ast
 
 module StringSet = Set.Make(String)
-module Signature = Set.Make(struct
-  type t = string * int
-  let compare = compare
-end)
+
+type pgeon_type = Term | Formula
+type ctx = FormulaCtx | TermCtx
+
+module SignatureMap = Map.Make(String)
 
 let rec expr_to_pgeon = function
   | EApp ("and", [a; b]) -> 
@@ -28,28 +29,58 @@ let rec expr_to_pgeon = function
       Printf.sprintf "%s(%s)" name (String.concat ", " translated_args)
 ;;
 
-let rec collect_signatures acc = function
+let rec collect_signatures ctx acc = function
   | EApp (name, args) ->
       let builtins = ["and"; "or"; "not"; "imp"; "implies"; "equ"] in
-      let acc = 
-        if List.mem name builtins then acc 
-        else Signature.add (name, List.length args) acc 
-      in
-      List.fold_left collect_signatures acc args
-  | EBind (_, _, body) -> collect_signatures acc body
-  | EModal (_, body) -> collect_signatures acc body
+      if List.mem name builtins then
+        List.fold_left (collect_signatures FormulaCtx) acc args
+      else
+        let arity = List.length args in
+        let ret_type = match ctx with FormulaCtx -> Formula | TermCtx -> Term in
+        let acc = SignatureMap.add name (arity, ret_type) acc in
+        List.fold_left (collect_signatures TermCtx) acc args
+  | EBind (_, _, body) -> collect_signatures ctx acc body
+  | EModal (_, body) -> collect_signatures ctx acc body
   | EVar _ -> acc
+;;
+
+module GroupKey = struct
+  type t = int * pgeon_type
+  let compare = compare
+end
+module GroupMap = Map.Make(GroupKey)
+
+let group_signatures sig_map =
+  SignatureMap.fold (fun name (arity, ret_type) acc ->
+    let current_names = match GroupMap.find_opt (arity, ret_type) acc with
+      | Some names -> names
+      | None -> []
+    in
+    GroupMap.add (arity, ret_type) (name :: current_names) acc
+  ) sig_map GroupMap.empty
+;;
+
+let format_type arity ret_type =
+  let args_str = String.concat " " (List.init arity (fun _ -> "term")) in
+  let ret_str = match ret_type with Term -> "term" | Formula -> "formula" in
+  if arity > 0 then args_str ^ " -> " ^ ret_str
+  else "-> " ^ ret_str
 ;;
 
 let generate_header (prob : problem_decl) =
   let pure_formulas = List.map snd prob.formulas in
-  let all_sigs = List.fold_left collect_signatures Signature.empty pure_formulas in
-  if Signature.is_empty all_sigs then ""
+  let sig_map = List.fold_left (collect_signatures FormulaCtx) SignatureMap.empty pure_formulas in
+  if SignatureMap.is_empty sig_map then ""
   else
-    let names = Signature.elements all_sigs 
-                |> List.map fst 
-                |> String.concat " " in
-    Printf.sprintf "function %s: -> formula\n\n" names
+    let grouped = group_signatures sig_map in
+    let lines = GroupMap.fold (fun (arity, ret_type) names acc ->
+      let sorted_names = List.sort String.compare names in
+      let names_str = String.concat " " sorted_names in
+      let type_str = format_type arity ret_type in
+      let line = Printf.sprintf "function %s : %s\n" names_str type_str in
+      line :: acc
+    ) grouped [] in
+    String.concat "" (List.rev lines) ^ "\n"
 ;;
 
 let rec get_free_vars bound acc = function
