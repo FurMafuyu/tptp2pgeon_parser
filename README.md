@@ -14,3 +14,4 @@ Translates problem files from TPTP and QMLTP to PGeon and Tableau Workbench prob
 
 ### Usage
 dune exec parser -- --<options> --modal <logic_name> <problem_file_path> [> <output_file>]
+dune exec parser -- --pgeon --modal s5 ../../Problems/Originals/GLC181+1.p > GLC181+1.txt
