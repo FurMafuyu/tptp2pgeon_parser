@@ -5,6 +5,7 @@ Translates problem files from TPTP and QMLTP to PGeon and Tableau Workbench prob
 ### Supported
 - PGeon (--pgeon)
 - Tableaux Workbench (--twb)
+- Any modal logic (--modal "name") that is specified in the problem file's matrix
 
 ### Requierements
 - Dune
@@ -12,4 +13,4 @@ Translates problem files from TPTP and QMLTP to PGeon and Tableau Workbench prob
 - OCamllex
 
 ### Usage
-dune exec parser -- --<options> <problem_file_path> [> <output_file>]
+dune exec parser -- --<options> --modal <logic_name> <problem_file_path> [> <output_file>]

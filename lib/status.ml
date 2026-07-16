@@ -6,6 +6,8 @@ type tptp_status =
   | Unsolved 
   | UnknownStatus
 
+exception Logic_not_found of string
+
 let contains sub s =
   try
     let _ = Str.search_forward (Str.regexp_string sub) s 0 in
@@ -21,22 +23,25 @@ let string_to_status s =
   else if contains "unsolved" s then Unsolved
   else UnknownStatus
 
-let extract_status filename =
+let extract_status logic filename =
   let ic = open_in filename in
   
   let rec parse_lines is_qmltp current_status =
     try
       let line = input_line ic in
-      if String.length line > 0 && line.[0] <> '%' then current_status
+      
+      if String.length line > 0 && line.[0] <> '%' then 
+        if is_qmltp && current_status = UnknownStatus then
+          raise (Logic_not_found logic)
+        else
+          current_status
       else
         let l_low = String.lowercase_ascii line in
         
         if contains "file" l_low && contains "qmltp" l_low then
           parse_lines true current_status
           
-        else if is_qmltp && contains "s4" l_low then
-          (* NOUVEAU : Si on a DÉJÀ trouvé un statut valide au tour d'avant, 
-             on ignore les lignes S4 suivantes (comme celle du Rating) *)
+        else if is_qmltp && contains logic l_low then
           if current_status <> UnknownStatus then 
             parse_lines is_qmltp current_status
           else
@@ -45,7 +50,7 @@ let extract_status filename =
                         |> List.filter (fun s -> s <> "") in
             
             match words with
-            | "%" :: "s4" :: _varying :: _cumulative :: constant_status :: _ ->
+            | "%" :: l :: _varying :: _cumulative :: constant_status :: _ when l = logic ->
                 let status = string_to_status constant_status in
                 parse_lines is_qmltp status
             | _ -> 
@@ -64,8 +69,12 @@ let extract_status filename =
           
         else
           parse_lines is_qmltp current_status
+          
     with End_of_file ->
-      current_status
+      if is_qmltp && current_status = UnknownStatus then
+        raise (Logic_not_found logic)
+      else
+        current_status
   in
   
   let final_status = parse_lines false UnknownStatus in
